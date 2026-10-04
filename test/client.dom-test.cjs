@@ -189,6 +189,26 @@ run();
 check('whale hidden when custom logo set', fishSvg.style.visibility === 'hidden');
 check('wordmark hidden when custom image set', wordmarkSvg.style.visibility === 'hidden');
 
+// The slotted layout renders the whale and the wordmark as two separate React
+// svgs. An image set for the wordmark must be overlaid exactly like the whale,
+// otherwise the lettering is hidden with nothing drawn in its place.
+const dsLayer = document.querySelector('[data-brand-ds]');
+check('wordmark overlay injected', !!dsLayer);
+const dsImg = (function find(n) {
+  for (const c of n.children) { if (c.tagName === 'IMG') return c; const hit = find(c); if (hit) return hit; }
+  return null;
+})(dsLayer);
+check('wordmark image mounted', !!dsImg && dsImg._attrs.src === store['dsh.customDeepSeekImg']);
+check('wordmark overlay visible when image set', !!dsLayer && dsLayer.style.display !== 'none');
+check('wordmark overlay has hit layer', !!dsLayer && !!dsLayer.children.find((c) => String(c.className).includes('dsh-brand-ds-hit')));
+
+// Resetting the wordmark must restore the React lettering and hide the overlay.
+delete store['dsh.customDeepSeekImg'];
+run();
+check('React lettering returns after wordmark reset', wordmarkSvg.style.visibility !== 'hidden');
+const dsLayer2 = document.querySelector('[data-brand-ds]');
+check('wordmark overlay hidden after reset', !!dsLayer2 && dsLayer2.style.display === 'none');
+
 const w = Math.max(...results.map((r) => r[1].length));
 for (const [st, name, extra] of results) {
   console.log(st.padEnd(5) + ' ' + name.padEnd(w) + (extra ? '  [' + extra + ']' : ''));
